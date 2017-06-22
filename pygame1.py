@@ -4,7 +4,7 @@ import random
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
-        self.image = pygame.image.load('supermanhero2.PNG').convert_alpha()
+        self.image = pygame.image.load('supermanhero3.PNG').convert_alpha()
         self.image.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.image.get_rect()
 
@@ -110,6 +110,7 @@ ADDLEVEL = pygame.USEREVENT + 2
 pygame.time.set_timer(ADDLEVEL, 20000)
 
 health = 100
+killed = False
 
 running = True
 while running:
@@ -166,10 +167,32 @@ while running:
         if health > 0:
             health -= .5
     elif health <= 0:
-        player.kill()
-        
-        running = False
-
+        killed = True
     pygame.display.flip()
+
+    while killed:
+        background = pygame.Surface(screen.get_size())
+        background.fill((144, 180, 237))
+        screen.blit(background, (0,0))
+        
+        basicfont5 = pygame.font.SysFont('AzureoN', 64)
+        text5 = basicfont5.render('You have been Killed', True, (0, 0, 0))
+        textrect5 = text5.get_rect()
+        textrect5.centerx = screen.get_rect().centerx
+        textrect5.centery = screen.get_rect().centery - 115
+        screen.blit(text5, textrect5)
+
+        basicfont6 = pygame.font.SysFont('AzureoN', 64)
+        text6 = basicfont6.render('Press Q to Quit', True, (0, 0, 0))
+        textrect6 = text6.get_rect()
+        textrect6.centerx = screen.get_rect().centerx
+        textrect6.centery = screen.get_rect().centery + 5
+        screen.blit(text6, textrect6)
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == KEYDOWN and event.key == K_q:
+                killed = False
+                running = False
 
 pygame.quit() 
