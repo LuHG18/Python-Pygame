@@ -11,16 +11,18 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load('supermanhero3.PNG').convert_alpha()
         self.image.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.image.get_rect()
+        self.speed = random.randint(0, 2)
 
-    def update(self, pressed_keys):
+    def update(self, pressed_keys, A):
         if pressed_keys[K_w]:
-            self.rect.move_ip(0, -1)
+            self.rect.move_ip(0, -A)
         if pressed_keys[K_s]:
-            self.rect.move_ip(0, 1)
+            self.rect.move_ip(0, A)
         if pressed_keys[K_a]:
-            self.rect.move_ip(-1, 0)
+            self.rect.move_ip(-A, 0)
         if pressed_keys[K_d]:
-            self.rect.move_ip(1, 0)
+            self.rect.move_ip(A, 0)
+            
 
         if self.rect.left < 0:
             self.rect.left = 0
@@ -45,6 +47,21 @@ class Opponent(pygame.sprite.Sprite):
         self.rect.move_ip(-self.speed, 0)
         if self.rect.right < 0:
             self.kill()
+
+class Powerup(pygame.sprite.Sprite):
+    def __init__(self):
+        super(Powerup, self).__init__()
+        self.image = pygame.image.load('powerup-lightning2.png').convert_alpha()
+        self.image.set_colorkey((255, 255, 255), RLEACCEL)
+        self.rect = self.image.get_rect(
+            center=(1350, random.randint(0,600))
+        )
+        self.speed = random.randint(0, 2)
+
+    def update(self):
+        self.rect.move_ip(-self.speed, 0)
+        if self.rect.right < 0:
+            self.kill()
             
 pygame.init()
 
@@ -56,8 +73,10 @@ screen = pygame.display.set_mode((1300,600), HWSURFACE|DOUBLEBUF|RESIZABLE)
 pygame.mixer.music.load("superman-theme-song.mp3")
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
+
 player = Player()
 opponent = Opponent(level)
+powerup = Powerup()
 
 welcome = True
 while welcome:
@@ -107,14 +126,21 @@ background.fill((144, 180, 237))
 
 players = pygame.sprite.Group()
 opponents = pygame.sprite.Group()
+powerups = pygame.sprite.Group()
+
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
+all_sprites.add(powerup)
+
 
 ADDOPPONENT = pygame.USEREVENT + 1
 pygame.time.set_timer(ADDOPPONENT, 260 - (level * 10))
 
 ADDLEVEL = pygame.USEREVENT + 2
 pygame.time.set_timer(ADDLEVEL, 20000)
+
+ADDPOWERUP = pygame.USEREVENT + 3
+pygame.time.set_timer(ADDPOWERUP, 15000)
 
 health = 100
 killed = False
@@ -139,14 +165,21 @@ while running:
 
         elif event.type == ADDLEVEL:
             level += 1
+
+        elif event.type == ADDPOWERUP:
+            new_powerup = Powerup()
+            powerups.add(new_powerup)
+            all_sprites.add(new_powerup)
+
+        
         
     
     screen.blit(background, (0, 0))
     pressed_keys = pygame.key.get_pressed()
-    player.update(pressed_keys)
+    player.update(pressed_keys, 1)
 
     opponents.update()
-
+    powerups.update()
     pygame.display.set_caption("Health: " + str(health))
 
     basicfont = pygame.font.SysFont(None, 48)
@@ -175,6 +208,12 @@ while running:
             health -= .5
     elif health <= 0:
         killed = True
+
+    if pygame.sprite.spritecollideany(player, powerups):
+        player.update(pressed_keys, 3)
+        pygame.time.set_timer(4, 3000)
+        
+            
     pygame.display.flip()
 
     while killed:
