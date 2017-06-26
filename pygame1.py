@@ -1,6 +1,10 @@
 import pygame
 from pygame.locals import *
 import random
+
+pygame.mixer.pre_init(44200, 16, 2, 4096)
+pygame.init()
+
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         super(Player, self).__init__()
@@ -47,8 +51,11 @@ pygame.init()
 level = 1
 
     
-screen = pygame.display.set_mode((1300,600))
+screen = pygame.display.set_mode((1300,600), HWSURFACE|DOUBLEBUF|RESIZABLE)
 
+pygame.mixer.music.load("superman-theme-song.mp3")
+pygame.mixer.music.set_volume(0.5)
+pygame.mixer.music.play(-1)
 player = Player()
 opponent = Opponent(level)
 
