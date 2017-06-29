@@ -1,9 +1,17 @@
 import pygame
 from pygame.locals import *
 import random
+import threading
 
 pygame.mixer.pre_init(44200, 16, 2, 4096)
 pygame.init()
+
+
+
+    
+poweruptest = False
+#powerupShield = 0    
+lightningPowerup = 1
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -11,17 +19,17 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load('supermanhero3.PNG').convert_alpha()
         self.image.set_colorkey((255, 255, 255), RLEACCEL)
         self.rect = self.image.get_rect()
-        self.speed = random.randint(0, 2)
+        self.speed = lightningPowerup
 
-    def update(self, pressed_keys, A):
+    def update(self, pressed_keys):
         if pressed_keys[K_w]:
-            self.rect.move_ip(0, -A)
+            self.rect.move_ip(0, -self.speed)
         if pressed_keys[K_s]:
-            self.rect.move_ip(0, A)
+            self.rect.move_ip(0, self.speed)
         if pressed_keys[K_a]:
-            self.rect.move_ip(-A, 0)
+            self.rect.move_ip(-self.speed, 0)
         if pressed_keys[K_d]:
-            self.rect.move_ip(A, 0)
+            self.rect.move_ip(self.speed, 0)
             
 
         if self.rect.left < 0:
@@ -62,12 +70,32 @@ class Powerup(pygame.sprite.Sprite):
         self.rect.move_ip(-self.speed, 0)
         if self.rect.right < 0:
             self.kill()
+        global poweruptest
+        if poweruptest == True:
+            self.kill()
+            poweruptest = False
+
+#class Powerup2(pygame.sprite.Sprite):
+    #def __init__(self):
+        #super(Powerup2, self).__init__()
+        #self.image = pygame.image.load('shield-image2.png').convert_alpha()
+        #self.image.set_colorkey((255, 255, 255), RLEACCEL)
+        #self.rect = self.image.get_rect(
+            #center=(1350, random.randint(0,600))
+        #)
+        #self.speed = random.randint(0, 2)
+
+    #def update(self):
+        #self.rect.move_ip(-self.speed, 0)
+        #if self.rect.right < 0:
+            #self.kill()
+
             
 pygame.init()
 
 level = 1
 
-    
+lightning2 = False
 screen = pygame.display.set_mode((1300,600), HWSURFACE|DOUBLEBUF|RESIZABLE)
 
 pygame.mixer.music.load("superman-theme-song.mp3")
@@ -77,6 +105,15 @@ pygame.mixer.music.play(-1)
 player = Player()
 opponent = Opponent(level)
 powerup = Powerup()
+#powerup2 = Powerup2()
+
+def lightning():
+    player.speed = 3
+    player.update(pressed_keys)
+    player.speed = 1
+
+#def shield():
+    #powerupShield = 100
 
 welcome = True
 while welcome:
@@ -127,10 +164,14 @@ background.fill((144, 180, 237))
 players = pygame.sprite.Group()
 opponents = pygame.sprite.Group()
 powerups = pygame.sprite.Group()
+powerup2s = pygame.sprite.Group()
 
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 all_sprites.add(powerup)
+
+all_sprites.add(player)
+#all_sprites.add(powerup2)
 
 
 ADDOPPONENT = pygame.USEREVENT + 1
@@ -141,6 +182,9 @@ pygame.time.set_timer(ADDLEVEL, 20000)
 
 ADDPOWERUP = pygame.USEREVENT + 3
 pygame.time.set_timer(ADDPOWERUP, 15000)
+
+#ADDPOWERUP2 = pygame.USEREVENT + 4
+#pygame.time.set_timer(ADDPOWERUP2, 4000)
 
 health = 100
 killed = False
@@ -171,15 +215,21 @@ while running:
             powerups.add(new_powerup)
             all_sprites.add(new_powerup)
 
+        #elif event.type == ADDPOWERUP2:
+            #new_powerup2 = Powerup2()
+            #powerup2s.add(new_powerup2)
+            #all_sprites.add(new_powerup2)
+
         
         
     
     screen.blit(background, (0, 0))
     pressed_keys = pygame.key.get_pressed()
-    player.update(pressed_keys, 1)
+    player.update(pressed_keys)
 
     opponents.update()
     powerups.update()
+    powerup2s.update()
     pygame.display.set_caption("Health: " + str(health))
 
     basicfont = pygame.font.SysFont(None, 48)
@@ -210,8 +260,18 @@ while running:
         killed = True
 
     if pygame.sprite.spritecollideany(player, powerups):
-        player.update(pressed_keys, 3)
-        pygame.time.set_timer(4, 3000)
+        lightningPowerup = 3
+        player.speed = lightningPowerup
+        lightning2 = True
+    if pygame.sprite.spritecollideany(player, opponents) and lightning2 == True:
+        lightningPowerup = 1
+        lightning2 = False
+        poweruptest = True
+    #if pygame.sprite.spritecollideany(player, powerup2s):
+        #powerupShield()
+    if poweruptest == True:
+        lightning()
+        powerups.update()
         
             
     pygame.display.flip()
@@ -232,10 +292,17 @@ while running:
         text6 = basicfont6.render('Press Q to Quit', True, (0, 0, 0))
         textrect6 = text6.get_rect()
         textrect6.centerx = screen.get_rect().centerx
-        textrect6.centery = screen.get_rect().centery + 5
+        textrect6.centery = screen.get_rect().centery + 80
         screen.blit(text6, textrect6)
-        pygame.display.flip()
         
+
+        basicfont7 = pygame.font.SysFont('AzureoN', 64)
+        text7 = basicfont7.render("You Finished on Level: " + str(level), True, (0, 0, 0))
+        textrect7 = text7.get_rect()
+        textrect7.centerx = screen.get_rect().centerx
+        textrect7.centery = screen.get_rect().centery + 5
+        screen.blit(text7, textrect7)
+        pygame.display.flip()
         for event in pygame.event.get():
             if event.type == KEYDOWN and event.key == K_q:
                 killed = False
